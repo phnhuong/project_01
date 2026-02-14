@@ -1,0 +1,34 @@
+# Workspaces
+backend/node_modules/
+frontend/node_modules/
+
+# Environment Variables
+backend/.env
+frontend/.env
+.env
+
+# Cache/Build
+**/.DS_Store
+backend/dist/
+frontend/dist/
+frontend/build/
+
+# Prisma
+backend/prisma/migrations/
+/generated/prisma/
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Antigravity/AI
+.gemini/
+.gravity/
+brain/
+**/task.md
+**/implementation_plan.md
+**/walkthrough.md
+**/task_archive/
+**/brain/

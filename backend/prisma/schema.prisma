@@ -1,0 +1,157 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+// --- 1. Organization & Time ---
+
+model AcademicYear {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique // "2023-2024", "2024-2025"
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+  isCurrent Boolean  @default(false) @map("is_current")
+  
+  classes   Class[]
+  
+  @@map("academic_years")
+}
+
+model Grade {
+  id      Int     @id @default(autoincrement())
+  name    String  @unique // "Khoi 10", "Khoi 11"
+  level   Int     // 10, 11, 12
+  
+  classes Class[]
+  
+  @@map("grades")
+}
+
+model Subject {
+  id      Int    @id @default(autoincrement())
+  code    String @unique
+  name    String
+  
+  assignments TeachingAssignment[]
+  scores      Score[]
+  
+  @@map("subjects")
+}
+
+model Class {
+  id              Int     @id @default(autoincrement())
+  name            String  // "10A1"
+  gradeId         Int     @map("grade_id")
+  academicYearId  Int     @map("academic_year_id")
+  
+  homeroomTeacherId Int?  @map("homeroom_teacher_id")
+
+  // Relations
+  grade           Grade         @relation(fields: [gradeId], references: [id])
+  academicYear    AcademicYear  @relation(fields: [academicYearId], references: [id])
+  homeroomTeacher User?         @relation("HomeroomClass", fields: [homeroomTeacherId], references: [id])
+  
+  enrollments     ClassEnrollment[]
+  assignments     TeachingAssignment[]
+
+  @@unique([name, academicYearId]) // "10A1" unique per Year
+  @@map("classes")
+}
+
+// --- 2. Users (Staff) ---
+
+model User {
+  id          Int      @id @default(autoincrement())
+  username    String   @unique
+  password    String
+  fullName    String   @map("full_name")
+  
+  systemRoles String[] @default(["TEACHER"]) @map("system_roles")
+  isActive    Boolean  @default(true) @map("is_active")
+
+  homeroomClasses     Class[]              @relation("HomeroomClass")
+  teachingAssignments TeachingAssignment[]
+  
+  @@map("users")
+}
+
+model TeachingAssignment {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  classId   Int      @map("class_id") // Context: Teacher X in Class Y
+  subjectId Int      @map("subject_id")
+  
+  user      User     @relation(fields: [userId], references: [id])
+  class     Class    @relation(fields: [classId], references: [id])
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+
+  @@unique([classId, subjectId])
+  @@map("teaching_assignments")
+}
+
+// --- 3. Students & Parents ---
+
+model Parent {
+  id        Int      @id @default(autoincrement())
+  fullName  String   @map("full_name")
+  phone     String   @unique
+  
+  students  Student[]
+  
+  @@map("parents")
+}
+
+model Student {
+  id          Int       @id @default(autoincrement())
+  studentCode String    @unique @map("student_code")
+  fullName    String    @map("full_name")
+  dob         DateTime
+  gender      String
+  
+  parentId    Int?      @map("parent_id")
+  isDeleted   Boolean   @default(false) @map("is_deleted")
+
+  // HISTORY: Student has many enrollments over years
+  enrollments ClassEnrollment[]
+  
+  parent      Parent?   @relation(fields: [parentId], references: [id])
+
+  @@map("students")
+}
+
+// NEW: Tracks which class a student belongs to in a specific year
+model ClassEnrollment {
+  id        Int      @id @default(autoincrement())
+  studentId Int      @map("student_id")
+  classId   Int      @map("class_id")
+  
+  student   Student  @relation(fields: [studentId], references: [id])
+  class     Class    @relation(fields: [classId], references: [id])
+
+  scores    Score[]
+
+  @@unique([studentId, classId])
+  @@map("class_enrollments")
+}
+
+// --- 4. Scores ---
+
+model Score {
+  id             Int      @id @default(autoincrement())
+  enrollmentId   Int      @map("enrollment_id") // Context: Student in Class X (Year Y)
+  subjectId      Int      @map("subject_id")
+  
+  type           String   @map("score_type") 
+  value          Decimal  @db.Decimal(3, 1)
+  semester       Int      
+  
+  // Relations
+  enrollment     ClassEnrollment @relation(fields: [enrollmentId], references: [id])
+  subject        Subject         @relation(fields: [subjectId], references: [id])
+
+  @@map("scores")
+}
