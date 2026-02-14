@@ -1,9 +1,9 @@
-import { User } from '@prisma/client';
+import { User, Prisma } from '@prisma/client';
 import prisma from '../config/prisma';
 import bcrypt from 'bcryptjs';
+import { ApiError } from '../utils/ApiError';
 
 export class UsersService {
-    // Lấy danh sách tất cả users (bỏ qua password để bảo mật)
     // Lấy danh sách tất cả users (bỏ qua password để bảo mật)
     async getAllUsers(page: number = 1, limit: number = 10, search?: string) {
         const skip = (page - 1) * limit;
@@ -12,7 +12,7 @@ export class UsersService {
             isActive: true,
             ...(search ? {
                 OR: [
-                    { username: { contains: search } }, // Case insensitive depends on DB/Prisma config
+                    { username: { contains: search } },
                     { fullName: { contains: search } }
                 ]
             } : {})

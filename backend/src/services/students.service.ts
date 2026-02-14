@@ -1,5 +1,6 @@
 import { Student, Prisma } from '@prisma/client';
 import prisma from '../config/prisma';
+import { ApiError } from '../utils/ApiError';
 
 export class StudentsService {
     // 1. Get All Students (with Pagination & Search)
@@ -54,19 +55,19 @@ export class StudentsService {
 
     // 3. Create Student
     async createStudent(data: any): Promise<Student> {
-        // Check if studentCode exists (optional, Prisma will throw P2002 anyway but this is cleaner)
+        // Check if studentCode exists
         const existing = await prisma.student.findUnique({
             where: { studentCode: data.studentCode }
         });
         if (existing) {
-            throw new Error('Student code already exists');
+            throw new ApiError(409, 'Student code already exists');
         }
 
         return prisma.student.create({
             data: {
                 studentCode: data.studentCode,
                 fullName: data.fullName,
-                dob: new Date(data.dob), // Ensure it's a Date object
+                dob: new Date(data.dob),
                 gender: data.gender,
                 parentId: data.parentId || null
             }
@@ -82,7 +83,6 @@ export class StudentsService {
                 dob: data.dob ? new Date(data.dob) : undefined,
                 gender: data.gender,
                 parentId: data.parentId,
-                // Allow updating studentCode if needed, but usually restricted
                 studentCode: data.studentCode
             }
         });

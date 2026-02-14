@@ -11,17 +11,18 @@ export const validate = (schema: ZodObject<any, any>) => {
             });
             next();
         } catch (error) {
-            if (error instanceof ZodError) {
+            if (error instanceof ZodError || (error as any).name === 'ZodError') {
+                const zodError = error as ZodError;
                 res.status(400).json({
                     message: 'Validation failed',
-                    errors: error.issues.map((issue) => ({
+                    errors: zodError.issues.map((issue) => ({
                         path: issue.path.join('.').replace('body.', ''),
                         message: issue.message,
                     })),
                 });
                 return;
             }
-            res.status(500).json({ message: 'Internal server error during validation' });
+            next(error);
         }
     };
 };

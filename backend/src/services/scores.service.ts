@@ -1,114 +1,111 @@
 import { Score, Prisma } from '@prisma/client';
 import prisma from '../config/prisma';
+import { ApiError } from '../utils/ApiError';
 
 export class ScoresService {
     // 1. Get All Scores (with filters)
-    async getAllScores(classId?: number, studentId?: number, subjectId?: number) {
-        // Build where clause considering Score uses enrollmentId
-        const where: Prisma.ScoreWhereInput = {
-            ...(subjectId ? { subjectId } : {}),
-            ...(classId || studentId ? {
-                enrollment: {
-                    ...(classId ? { classId } : {}),
-                    ...(studentId ? { studentId } : {})
-                }
-            } : {})
-        };
-
+    async getAllScores(classId?: number, studentId?: number, subjectId?: number): Promise<any[]> {
         return prisma.score.findMany({
-            where,
-            include: {
-                subject: {
-                    select: {
-                        id: true,
-                        code: true,
-                        name: true
-                    }
+            where: {
+                enrollment: {
+                    classId,
+                    studentId
                 },
+                subjectId
+            },
+            include: {
                 enrollment: {
                     include: {
                         student: {
                             select: {
-                                id: true,
-                                studentCode: true,
-                                fullName: true
+                                fullName: true,
+                                studentCode: true
                             }
                         },
                         class: {
                             select: {
-                                id: true,
                                 name: true
                             }
                         }
                     }
+                },
+                subject: {
+                    select: {
+                        name: true,
+                        code: true
+                    }
                 }
             },
-            orderBy: [
-                { enrollmentId: 'asc' },
-                { subjectId: 'asc' }
-            ]
+            orderBy: { id: 'desc' }
         });
     }
 
     // 2. Get Score by ID
-    async getScoreById(id: number) {
+    async getScoreById(id: number): Promise<any> {
         return prisma.score.findUnique({
             where: { id },
             include: {
-                subject: true,
                 enrollment: {
                     include: {
                         student: true,
                         class: true
                     }
-                }
+                },
+                subject: true
             }
         });
     }
 
     // 3. Create Score
     async createScore(data: any): Promise<Score> {
-        // Find enrollment by classId and studentId
-        const enrollment = await prisma.classEnrollment.findFirst({
+        // Check if student is enrolled in this class
+        const enrollment = await prisma.classEnrollment.findUnique({
             where: {
-                classId: data.classId,
-                studentId: data.studentId
+                studentId_classId: {
+                    classId: data.classId,
+                    studentId: data.studentId
+                }
             }
         });
 
         if (!enrollment) {
-            throw new Error('Student is not enrolled in this class');
+            throw new ApiError(400, 'Student is not enrolled in this class');
         }
 
-        // Validate score value (0-10)
-        if (data.value < 0 || data.value > 10) {
-            throw new Error('Score value must be between 0 and 10');
+        // Validate score value range
+        const scoreValue = typeof data.value === 'string' ? parseFloat(data.value) : data.value;
+        if (scoreValue < 0 || scoreValue > 10) {
+            throw new ApiError(400, 'Score value must be between 0 and 10');
         }
 
         return prisma.score.create({
             data: {
                 enrollmentId: enrollment.id,
                 subjectId: data.subjectId,
-                type: data.scoreType || data.type, // Support both field names
-                value: data.value,
-                semester: data.semester || 1, // Default to semester 1
+                type: data.scoreType,
+                value: scoreValue,
+                semester: data.semester || 1
             }
         });
     }
 
     // 4. Update Score
     async updateScore(id: number, data: any): Promise<Score> {
-        // Validate score value if provided
-        if (data.value !== undefined && (data.value < 0 || data.value > 10)) {
-            throw new Error('Score value must be between 0 and 10');
+        // Validate score value range if provided
+        if (data.value !== undefined) {
+            const scoreValue = typeof data.value === 'string' ? parseFloat(data.value) : data.value;
+            if (scoreValue < 0 || scoreValue > 10) {
+                throw new ApiError(400, 'Score value must be between 0 and 10');
+            }
+            data.value = scoreValue;
         }
 
         return prisma.score.update({
             where: { id },
             data: {
-                type: data.scoreType || data.type, // Support both field names
+                type: data.scoreType,
                 value: data.value,
-                ...(data.semester ? { semester: data.semester } : {})
+                semester: data.semester
             }
         });
     }

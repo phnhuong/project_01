@@ -1,5 +1,6 @@
 import { Parent, Prisma } from '@prisma/client';
 import prisma from '../config/prisma';
+import { ApiError } from '../utils/ApiError';
 
 export class ParentsService {
     // 1. Get All Parents (with Pagination & Search)
@@ -72,7 +73,7 @@ export class ParentsService {
             where: { phone: data.phone }
         });
         if (existing) {
-            throw new Error('Phone number already exists');
+            throw new ApiError(409, 'Phone number already exists');
         }
 
         return prisma.parent.create({

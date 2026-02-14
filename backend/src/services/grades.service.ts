@@ -1,5 +1,6 @@
-import { Grade } from '@prisma/client';
+import { Grade, Prisma } from '@prisma/client';
 import prisma from '../config/prisma';
+import { ApiError } from '../utils/ApiError';
 
 export class GradesService {
     // 1. Get All Grades
@@ -18,6 +19,13 @@ export class GradesService {
 
     // 3. Create Grade
     async createGrade(data: any): Promise<Grade> {
+        const existing = await prisma.grade.findUnique({
+            where: { name: data.name }
+        });
+        if (existing) {
+            throw new ApiError(409, 'Grade name already exists');
+        }
+
         return prisma.grade.create({
             data: {
                 name: data.name,
@@ -45,7 +53,7 @@ export class GradesService {
         });
 
         if (classCount > 0) {
-            throw new Error('Cannot delete grade with existing classes');
+            throw new ApiError(400, 'Cannot delete grade with existing classes');
         }
 
         return prisma.grade.delete({

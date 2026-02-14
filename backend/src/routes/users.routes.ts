@@ -77,9 +77,7 @@ router.use(authenticateToken as any);
  *                 pagination:
  *                   type: object
  */
-router.get('/', (req: Request, res: Response) => {
-    usersController.getUsers(req, res);
-});
+router.get('/', usersController.getUsers.bind(usersController));
 
 /**
  * @swagger
@@ -105,9 +103,7 @@ router.get('/', (req: Request, res: Response) => {
  *       404:
  *         description: User not found
  */
-router.get('/:id', (req: Request, res: Response) => {
-    usersController.getUser(req, res);
-});
+router.get('/:id', usersController.getUser.bind(usersController));
 
 /**
  * @swagger
@@ -146,9 +142,7 @@ router.get('/:id', (req: Request, res: Response) => {
  *       409:
  *         description: Username already exists
  */
-router.post('/', validate(createUserSchema), (req: Request, res: Response) => {
-    usersController.createUser(req, res);
-});
+router.post('/', validate(createUserSchema), usersController.createUser.bind(usersController));
 
 /**
  * @swagger
@@ -178,9 +172,7 @@ router.post('/', validate(createUserSchema), (req: Request, res: Response) => {
  *       404:
  *         description: User not found
  */
-router.put('/:id', validate(updateUserSchema), (req: Request, res: Response) => {
-    usersController.updateUser(req, res);
-});
+router.put('/:id', validate(updateUserSchema), usersController.updateUser.bind(usersController));
 
 /**
  * @swagger
@@ -202,8 +194,6 @@ router.put('/:id', validate(updateUserSchema), (req: Request, res: Response) => 
  *       404:
  *         description: User not found
  */
-router.delete('/:id', (req: Request, res: Response) => {
-    usersController.deleteUser(req, res);
-});
+router.delete('/:id', usersController.deleteUser.bind(usersController));
 
 export default router;

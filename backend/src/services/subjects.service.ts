@@ -1,11 +1,12 @@
-import { Subject } from '@prisma/client';
+import { Subject, Prisma } from '@prisma/client';
 import prisma from '../config/prisma';
+import { ApiError } from '../utils/ApiError';
 
 export class SubjectsService {
     // 1. Get All Subjects
     async getAllSubjects(): Promise<Subject[]> {
         return prisma.subject.findMany({
-            orderBy: { code: 'asc' }
+            orderBy: { name: 'asc' }
         });
     }
 
@@ -18,6 +19,13 @@ export class SubjectsService {
 
     // 3. Create Subject
     async createSubject(data: any): Promise<Subject> {
+        const existing = await prisma.subject.findUnique({
+            where: { code: data.code }
+        });
+        if (existing) {
+            throw new ApiError(409, 'Subject code already exists');
+        }
+
         return prisma.subject.create({
             data: {
                 code: data.code,
@@ -39,14 +47,14 @@ export class SubjectsService {
 
     // 5. Delete Subject
     async deleteSubject(id: number): Promise<Subject> {
-        // Check if there are teaching assignments or scores using this subject
-        const [assignmentCount, scoreCount] = await Promise.all([
-            prisma.teachingAssignment.count({ where: { subjectId: id } }),
-            prisma.score.count({ where: { subjectId: id } })
-        ]);
+        // Check if there are assignments or scores using this subject
+        const scoreCount = await prisma.score.count({
+            where: { subjectId: id }
+        });
 
-        if (assignmentCount > 0 || scoreCount > 0) {
-            throw new Error('Cannot delete subject with existing assignments or scores');
+        // Add check for assignments if that table exists/is used
+        if (scoreCount > 0) {
+            throw new ApiError(400, 'Cannot delete subject with existing assignments or scores');
         }
 
         return prisma.subject.delete({

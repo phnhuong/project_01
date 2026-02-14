@@ -1,5 +1,6 @@
 import { AcademicYear, Prisma } from '@prisma/client';
 import prisma from '../config/prisma';
+import { ApiError } from '../utils/ApiError';
 
 export class AcademicYearsService {
     // 1. Get All Academic Years
@@ -30,7 +31,7 @@ export class AcademicYearsService {
         const endDate = new Date(data.endDate);
 
         if (startDate >= endDate) {
-            throw new Error('Start date must be before end date');
+            throw new ApiError(400, 'Start date must be before end date');
         }
 
         // If creating as active, deactivate all others first
@@ -39,6 +40,14 @@ export class AcademicYearsService {
                 where: { isCurrent: true },
                 data: { isCurrent: false }
             });
+        }
+
+        // Check for duplicate name
+        const existing = await prisma.academicYear.findUnique({
+            where: { name: data.name }
+        });
+        if (existing) {
+            throw new ApiError(409, 'Academic year name already exists');
         }
 
         return prisma.academicYear.create({
@@ -59,7 +68,7 @@ export class AcademicYearsService {
             const endDate = new Date(data.endDate);
 
             if (startDate >= endDate) {
-                throw new Error('Start date must be before end date');
+                throw new ApiError(400, 'Start date must be before end date');
             }
         }
 
@@ -93,7 +102,7 @@ export class AcademicYearsService {
         });
 
         if (classCount > 0) {
-            throw new Error('Cannot delete academic year with existing classes');
+            throw new ApiError(400, 'Cannot delete academic year with existing classes');
         }
 
         return prisma.academicYear.delete({

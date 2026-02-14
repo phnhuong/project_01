@@ -51,9 +51,7 @@ const authController = new AuthController();
  *       401:
  *         description: Unauthorized
  */
-router.post('/login', validate(loginSchema), (req, res) => {
-    authController.login(req as any, res as any);
-});
+router.post('/login', validate(loginSchema), authController.login.bind(authController));
 
 /**
  * @swagger

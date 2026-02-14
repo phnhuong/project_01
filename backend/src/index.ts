@@ -12,7 +12,8 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger';
-// const authRoutes = require('./routes/auth.routes').default;
+import { errorMiddleware } from './middlewares/error.middleware';
+import { ApiError } from './utils/ApiError';
 
 dotenv.config();
 
@@ -39,6 +40,14 @@ app.get('/', (req, res) => {
 
 // Swagger documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// Custom 404 handler for non-existent routes
+app.use((req, res, next) => {
+  next(new ApiError(404, `Cannot find ${req.originalUrl} on this server`));
+});
+
+// Global Error Handler (Must be last)
+app.use(errorMiddleware as any);
 
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);

@@ -16,6 +16,8 @@ import gradesRoutes from '../routes/grades.routes';
 import subjectsRoutes from '../routes/subjects.routes';
 import classesRoutes from '../routes/classes.routes';
 import scoresRoutes from '../routes/scores.routes';
+import { errorMiddleware } from '../middlewares/error.middleware';
+import { ApiError } from '../utils/ApiError';
 
 dotenv.config();
 
@@ -48,6 +50,14 @@ export function createTestApp(): Express {
     app.get('/', (req, res) => {
         res.send('Student Management API is running!');
     });
+
+    // Custom 404 handler for non-existent routes
+    app.use((req, res, next) => {
+        next(new ApiError(404, `Cannot find ${req.originalUrl} on this server`));
+    });
+
+    // Global Error Handler
+    app.use(errorMiddleware as any);
 
     return app;
 }

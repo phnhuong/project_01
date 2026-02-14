@@ -1,33 +1,33 @@
-import { Class, Prisma } from '@prisma/client';
+import { Class, ClassEnrollment, Prisma } from '@prisma/client';
 import prisma from '../config/prisma';
+import { ApiError } from '../utils/ApiError';
 
 export class ClassesService {
-    // 1. Get All Classes (with filters and relationships)
-    async getAllClasses(academicYearId?: number, gradeId?: number) {
-        const where: Prisma.ClassWhereInput = {
-            ...(academicYearId ? { academicYearId } : {}),
-            ...(gradeId ? { gradeId } : {})
-        };
-
+    // 1. Get All Classes
+    async getAllClasses(academicYearId?: number, gradeId?: number): Promise<any[]> {
         return prisma.class.findMany({
-            where,
+            where: {
+                academicYearId,
+                gradeId
+            },
             include: {
                 grade: true,
                 academicYear: true,
                 homeroomTeacher: {
                     select: {
                         id: true,
-                        fullName: true,
-                        username: true
+                        fullName: true
                     }
+                },
+                _count: {
+                    select: { enrollments: true }
                 }
-            },
-            orderBy: { name: 'asc' }
+            }
         });
     }
 
-    // 2. Get Class by ID (with students)
-    async getClassById(id: number) {
+    // 2. Get Class by ID
+    async getClassById(id: number): Promise<any> {
         return prisma.class.findUnique({
             where: { id },
             include: {
@@ -36,21 +36,12 @@ export class ClassesService {
                 homeroomTeacher: {
                     select: {
                         id: true,
-                        fullName: true,
-                        username: true
+                        fullName: true
                     }
                 },
                 enrollments: {
                     include: {
-                        student: {
-                            select: {
-                                id: true,
-                                studentCode: true,
-                                fullName: true,
-                                dob: true,
-                                gender: true
-                            }
-                        }
+                        student: true
                     }
                 }
             }
@@ -64,7 +55,7 @@ export class ClassesService {
                 name: data.name,
                 gradeId: data.gradeId,
                 academicYearId: data.academicYearId,
-                homeroomTeacherId: data.homeroomTeacherId || null
+                homeroomTeacherId: data.homeroomTeacherId
             }
         });
     }
@@ -84,13 +75,13 @@ export class ClassesService {
 
     // 5. Delete Class
     async deleteClass(id: number): Promise<Class> {
-        // Check if there are enrollments
+        // Check for enrollments
         const enrollmentCount = await prisma.classEnrollment.count({
             where: { classId: id }
         });
 
         if (enrollmentCount > 0) {
-            throw new Error('Cannot delete class with existing enrollments');
+            throw new ApiError(400, 'Cannot delete class with existing enrollments');
         }
 
         return prisma.class.delete({
@@ -98,8 +89,8 @@ export class ClassesService {
         });
     }
 
-    // 6. Enroll Student to Class
-    async enrollStudent(classId: number, studentId: number) {
+    // 6. Enroll Student
+    async enrollStudent(classId: number, studentId: number): Promise<ClassEnrollment> {
         return prisma.classEnrollment.create({
             data: {
                 classId,
@@ -109,12 +100,22 @@ export class ClassesService {
     }
 
     // 7. Remove Student from Class
-    async removeStudent(classId: number, studentId: number) {
-        return prisma.classEnrollment.deleteMany({
+    async removeStudent(classId: number, studentId: number): Promise<void> {
+        const enrollment = await prisma.classEnrollment.findUnique({
             where: {
-                classId,
-                studentId
+                studentId_classId: {
+                    classId,
+                    studentId
+                }
             }
+        });
+
+        if (!enrollment) {
+            throw new ApiError(404, 'Enrollment not found');
+        }
+
+        await prisma.classEnrollment.delete({
+            where: { id: enrollment.id }
         });
     }
 }
