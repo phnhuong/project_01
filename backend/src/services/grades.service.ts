@@ -4,8 +4,13 @@ import { ApiError } from '../utils/ApiError';
 
 export class GradesService {
     // 1. Get All Grades
-    async getAllGrades(): Promise<Grade[]> {
+    async getAllGrades(academicYearId?: number): Promise<Grade[]> {
+        const where: any = {};
+        if (academicYearId) {
+            where.academicYearId = academicYearId;
+        }
         return prisma.grade.findMany({
+            where,
             orderBy: { level: 'asc' }
         });
     }
@@ -19,17 +24,21 @@ export class GradesService {
 
     // 3. Create Grade
     async createGrade(data: any): Promise<Grade> {
-        const existing = await prisma.grade.findUnique({
-            where: { name: data.name }
+        const existing = await prisma.grade.findFirst({
+            where: {
+                name: data.name,
+                academicYearId: data.academicYearId
+            }
         });
         if (existing) {
-            throw new ApiError(409, 'Grade name already exists');
+            throw new ApiError(409, 'Grade name already exists in this academic year');
         }
 
         return prisma.grade.create({
             data: {
                 name: data.name,
-                level: data.level
+                level: data.level,
+                academicYearId: data.academicYearId
             }
         });
     }

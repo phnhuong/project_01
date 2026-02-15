@@ -5,11 +5,14 @@ import { ApiError } from '../utils/ApiError';
 
 export class UsersService {
     // Lấy danh sách tất cả users (bỏ qua password để bảo mật)
-    async getAllUsers(page: number = 1, limit: number = 10, search?: string) {
+    async getAllUsers(page: number = 1, limit: number = 10, search?: string, role?: string) {
         const skip = (page - 1) * limit;
 
         const where: any = {
             isActive: true,
+            ...(role ? {
+                systemRoles: { has: role }
+            } : {}),
             ...(search ? {
                 OR: [
                     { username: { contains: search } },

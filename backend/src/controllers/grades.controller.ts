@@ -8,7 +8,8 @@ const gradesService = new GradesService();
 export class GradesController {
     // 1. Get All
     getGrades = asyncHandler(async (req: Request, res: Response) => {
-        const grades = await gradesService.getAllGrades();
+        const academicYearId = req.query.academicYearId ? parseInt(req.query.academicYearId as string) : undefined;
+        const grades = await gradesService.getAllGrades(academicYearId);
         res.json(grades);
     });
 

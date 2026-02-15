@@ -148,4 +148,53 @@ router.put('/:id', validate(updateParentSchema), parentsController.updateParent.
  */
 router.delete('/:id', parentsController.deleteParent.bind(parentsController));
 
+/**
+ * @swagger
+ * /api/parents/{id}/password:
+ *   post:
+ *     summary: Reset parent password
+ *     tags: [Parents]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password reset successfully
+ */
+router.post('/:id/password', parentsController.resetPassword.bind(parentsController));
+
+/**
+ * @swagger
+ * /api/parents/{id}/children:
+ *   get:
+ *     summary: Get children of a parent
+ *     tags: [Parents]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: List of children
+ */
+router.get('/:id/children', parentsController.getChildren.bind(parentsController));
+
 export default router;

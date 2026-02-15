@@ -6,6 +6,7 @@ import gradesRoutes from './routes/grades.routes';
 import subjectsRoutes from './routes/subjects.routes';
 import classesRoutes from './routes/classes.routes';
 import scoresRoutes from './routes/scores.routes';
+import reportsRoutes from './routes/reports.routes';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -34,6 +35,7 @@ app.use('/api/grades', gradesRoutes);
 app.use('/api/subjects', subjectsRoutes);
 app.use('/api/classes', classesRoutes);
 app.use('/api/scores', scoresRoutes);
+app.use('/api/reports', reportsRoutes);
 app.get('/', (req, res) => {
   res.send('Student Management API is running!');
 });

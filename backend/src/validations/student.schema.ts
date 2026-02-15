@@ -9,6 +9,8 @@ export const createStudentSchema = z.object({
         fullName: z.string().min(1, 'Full name is required'),
         dob: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
         gender: z.enum(['Nam', 'Nữ', 'Khác']),
+        phone: z.string().optional(),
+        address: z.string().optional(),
         parentId: z.number().int().optional(),
     }),
 });
@@ -22,6 +24,8 @@ export const updateStudentSchema = z.object({
         fullName: z.string().optional(),
         dob: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
         gender: z.enum(['Nam', 'Nữ', 'Khác']).optional(),
+        phone: z.string().optional(),
+        address: z.string().optional(),
         parentId: z.number().int().optional(),
         isDeleted: z.boolean().optional(),
     }),

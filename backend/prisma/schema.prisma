@@ -17,17 +17,22 @@ model AcademicYear {
   isCurrent Boolean  @default(false) @map("is_current")
   
   classes   Class[]
+  grades    Grade[]
   
   @@map("academic_years")
 }
 
 model Grade {
-  id      Int     @id @default(autoincrement())
-  name    String  @unique // "Khoi 10", "Khoi 11"
-  level   Int     // 10, 11, 12
+  id              Int      @id @default(autoincrement())
+  name            String   // "Khoi 10", "Khoi 11"
+  level           Int      // 10, 11, 12
+  academicYearId  Int      @map("academic_year_id")
   
-  classes Class[]
+  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id])
+  classes         Class[]
   
+  @@unique([name, academicYearId])
+  @@unique([level, academicYearId])
   @@map("grades")
 }
 
@@ -99,6 +104,10 @@ model Parent {
   id        Int      @id @default(autoincrement())
   fullName  String   @map("full_name")
   phone     String   @unique
+  
+  // Authentication fields
+  password  String?  // Hashed password, nullable for existing parents
+  isActive  Boolean  @default(true) @map("is_active")
   
   students  Student[]
   
